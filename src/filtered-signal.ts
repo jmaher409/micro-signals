@@ -1,17 +1,17 @@
 import {Listener} from './interfaces/listener';
 import {SignalBinding} from './interfaces/signal-binding';
-import {SignalLike} from './interfaces/signal-like';
+import {ReadableSignalLike, SignalLike} from './interfaces/signal-like';
 import {Signal} from './signal';
 
 export interface FilterFunction<T> {
     (payload: T): boolean;
 }
 
-export class FilteredSignal<T> implements SignalLike<T> {
+export class FilteredSignal<T> implements ReadableSignalLike<T> {
     private _forwardedSignal: SignalLike<T>;
 
     constructor(
-        signal: SignalLike<T>,
+        signal: ReadableSignalLike<T>,
         filter: FilterFunction<T> = () => true,
     ) {
         this._forwardedSignal = new Signal<T>();
@@ -28,9 +28,5 @@ export class FilteredSignal<T> implements SignalLike<T> {
 
     addOnce(listener: Listener<T>): SignalBinding {
         return this._forwardedSignal.addOnce(listener);
-    }
-
-    dispatch(payload: T) {
-        this._forwardedSignal.dispatch(payload);
     }
 }
