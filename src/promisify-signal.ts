@@ -1,8 +1,8 @@
-import {SignalLike} from './interfaces/signal-like';
+import {ReadableSignalLike} from './interfaces/signal-like';
 
 export function promisifySignal<T>(
-    resolveSignal: SignalLike<T>,
-    rejectSignal?: SignalLike<T>,
+    resolveSignal: ReadableSignalLike<T>,
+    rejectSignal?: ReadableSignalLike<T>,
 ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         if (rejectSignal) {
