@@ -1,9 +1,10 @@
+import {DetachableSignal} from './interfaces/detachable-signal';
 import {Listener} from './interfaces/listener';
 import {SignalBinding} from './interfaces/signal-binding';
 import {ReadableSignalLike, SignalLike} from './interfaces/signal-like';
 
-export class Signal<T> implements SignalLike<T> {
-    private _listeners = new Set<(payload: T) => void>();
+export class Signal<T> implements SignalLike<T>, DetachableSignal<T> {
+    private _listeners = new Set<Listener<T>>();
 
     add(listener: Listener<T>): SignalBinding {
         this._listeners.add(listener);
@@ -23,6 +24,15 @@ export class Signal<T> implements SignalLike<T> {
     dispatch(payload: T): void {
         this._listeners.forEach(callback => callback.call(undefined, payload));
     }
+
+    detachAll() {
+        this._listeners.clear();
+    }
+
+    detach(listener: Listener<T>) {
+        this._listeners.delete(listener);
+    }
+
 }
 
 export class ReadOnlySignal<T> implements ReadableSignalLike<T> {
