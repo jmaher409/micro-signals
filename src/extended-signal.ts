@@ -1,10 +1,12 @@
-import {BaseSignal, Cache, Listener, ReadableSignal} from './interfaces';
+import {Accumulator, BaseSignal, Cache, Listener, ReadableSignal} from './interfaces';
 import { TagMap } from './tag-map';
+
+export type PaylaodProcessor<T, A> = (payload: T, ...args: any[]) => A;
 
 export class ExtendedSignal<T> implements ReadableSignal<T> {
     public static merge<U>(...signals: BaseSignal<U>[]): ReadableSignal<U> {
         const listeners = new Map<any, any>();
-        return new ExtendedSignal({
+        return new ExtendedSignal<U>({
             add(listener) {
                 const newListener = (payload: U) => listener(payload);
                 listeners.set(listener, newListener);
@@ -76,7 +78,7 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
     public filter<U extends T>(filter: (payload: T) => payload is U): ReadableSignal<U>;
     public filter(filter: (payload: T) => boolean): ReadableSignal<T>;
     public filter(filter: (payload: T) => boolean): ReadableSignal<T> {
-        return convertedListenerSignal(
+        return convertedListenerSignal<T>(
             this._baseSignal,
             listener => payload => {
                 if (filter(payload)) {
@@ -86,7 +88,7 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
         );
     }
     public map<U>(transform: (payload: T) => U): ReadableSignal<U> {
-        return convertedListenerSignal(
+        return convertedListenerSignal<T, U>(
             this._baseSignal,
             listener => payload => listener(transform(payload)),
         );
@@ -98,7 +100,7 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
         return ExtendedSignal.promisify(this._baseSignal, rejectSignal);
     }
     public readOnly(): ReadableSignal<T> {
-        return convertedListenerSignal(
+        return convertedListenerSignal<T>(
             this._baseSignal,
             listener => payload => listener(payload),
         );
@@ -106,7 +108,7 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
     public cache(cache: Cache<T>): ReadableSignal<T> {
         this._baseSignal.add(payload => cache.add(payload));
 
-        return convertedListenerSignal(
+        return convertedListenerSignal<T>(
             this._baseSignal,
             listener => payload => listener(payload),
             (listener, listenerActive) => {
@@ -118,15 +120,31 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
             },
         );
     }
+    public scan<R>(accumulator: Accumulator<T, R>, seed?: R): ReadableSignal<R> {
+        return convertedListenerSignal<T, R>(
+            this._baseSignal,
+            this._createAccumulatorListenerConverter(accumulator, seed),
+        );
+    }
+    private _createAccumulatorListenerConverter<R>(
+        accumulator: Accumulator<T, R>,
+        seed?: R,
+    ): (listener: Listener<R>) => Listener<T> {
+        let result = seed || undefined;
+        return (listener: Listener<R>) => (payload: T) => {
+            result = accumulator(result, payload);
+            listener(result);
+        };
+    }
 }
 
 /**
  * Provides a new signal, with its own set of listeners, and the ability to transform listeners that
  * are added to the new signal.
  */
-function convertedListenerSignal<BaseType, ExtendedType>(
+function convertedListenerSignal<BaseType, ExtendedType = BaseType>(
     baseSignal: BaseSignal<BaseType>,
-    convertListener: (listener: Listener<ExtendedType>)  => Listener<BaseType>,
+    convertListener: (listener: Listener<ExtendedType>) => Listener<BaseType>,
     postAddHook?: (listener: Listener<ExtendedType>, listenerActive: () => boolean) => void,
 ): ExtendedSignal<ExtendedType> {
     const listenerMap = new Map<Listener<ExtendedType>, Listener<BaseType>>();
