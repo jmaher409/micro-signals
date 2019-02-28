@@ -1,4 +1,4 @@
-import {BaseSignal, Cache, Listener, ReadableSignal} from './interfaces';
+import {BaseSignal, Cache, Listener, ReadableSignal, WritableSignal} from './interfaces';
 import { TagMap } from './tag-map';
 
 export class ExtendedSignal<T> implements ReadableSignal<T> {
@@ -117,6 +117,12 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
                 });
             },
         );
+    }
+    public pipe(signal: WritableSignal<T>): void {
+        this.add((payload: T) => signal.dispatch(payload), signal);
+    }
+    public unpipe(signal: WritableSignal<T>): void {
+        this.remove(signal);
     }
 }
 
