@@ -207,3 +207,15 @@ test('addOnce should the same as add when adding a listener multiple times', t =
 
     t.end();
 });
+
+test('pipe should forward payloads to downstream signal', t => {
+    let payload;
+    const s1 = new Signal<number>();
+    const s2 = new Signal<number>();
+    s1.pipe(s2);
+
+    s2.add(p => payload = p);
+    s1.dispatch(2);
+    t.equal(payload, 2);
+    t.end();
+});

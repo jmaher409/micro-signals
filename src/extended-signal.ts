@@ -121,9 +121,6 @@ export class ExtendedSignal<T> implements ReadableSignal<T> {
     public pipe(signal: WritableSignal<T>): void {
         this.add((payload: T) => signal.dispatch(payload), signal);
     }
-    public unpipe(signal: WritableSignal<T>): void {
-        this.remove(signal);
-    }
 }
 
 /**

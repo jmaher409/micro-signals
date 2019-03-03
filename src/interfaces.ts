@@ -39,12 +39,6 @@ export interface ReadableSignal<T> extends BaseSignal<T> {
      * @param signal signal to which dispatched payloads will be piped
      */
     pipe(signal: WritableSignal<T>): void;
-    /**
-     * stop piping output of signal into another signal
-     *
-     * @param signal signal to be removed from base signal
-     */
-    unpipe(signal: WritableSignal<T>): void;
 }
 
 export interface WritableSignal<T> {
